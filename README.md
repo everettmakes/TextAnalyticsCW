@@ -2,6 +2,11 @@
 
 **TODO:** Convert medical abstracts into a structured **PICO** table (Population, Intervention, Comparator, Outcome).
 
+# Clinical Information Extraction
+![Project Status](https://img.shields.io/badge/Project_Board-GitHub-blue?style=for-the-badge&logo=github)
+
+[Click here to view the Kanban Board](https://github.com/users/everettmakes/projects/1)
+
 -----
 
 ### **1. Preliminary (Clustering)**
