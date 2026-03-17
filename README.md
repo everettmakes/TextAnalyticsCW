@@ -2,7 +2,7 @@
 
 **TODO:** Convert medical abstracts into a structured **PICO** table (Population, Intervention, Comparator, Outcome).
 
-[![Task Board](https://img.shields.io/badge/Project_Board-GitHub-blue?style=for-the-badge&logo=github)]([https://github.com/users/YourUsername/projects/1](https://github.com/users/everettmakes/projects/1))
+[![Task Board](https://img.shields.io/badge/Project_Board-GitHub-blue?style=for-the-badge&logo=github)](https://github.com/users/everettmakes/projects/1)
 
 -----
 
