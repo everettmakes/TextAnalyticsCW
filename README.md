@@ -23,12 +23,10 @@ Pick **two axes** to test (e.g., LLMs vs. Rules) and build pipelines for each. C
 
 -----
 
-# 📑 Group Project: Clinical Information Extraction (EBM-NLP)
+# Group Project: Clinical Information Extraction (EBM-NLP)
 
 ## 0. Project Overview
 * **Main Challenge:** Converting unstructured clinical trial abstracts into structured PICO tables.
-* **Status:** In Progress 🚧
-
 ------
 
 ## 1. Abstract (0.25 Pages)
