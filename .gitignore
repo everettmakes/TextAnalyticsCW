@@ -1,0 +1,20 @@
+# Data and Large Files
+data/
+*.tar.gz
+*.zip
+
+# Jupyter Notebook internals
+.ipynb_checkpoints/
+.virtual_documents/
+# If you use Jupyter Lab
+.jupyter/
+
+# Python environment & cache
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env/
+
+# macOS system files
+.DS_Store
