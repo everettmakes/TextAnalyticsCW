@@ -2,6 +2,8 @@
 
 code reqs:
 conda install spacy
+
+
 conda install -c conda-forge spacy-model-en_core_web_md
 
 
