@@ -1,5 +1,10 @@
 ### **Task 2: Clinical Data Extraction**
 
+code reqs:
+conda install spacy
+conda install -c conda-forge spacy-model-en_core_web_md
+
+
 **TODO:** Convert medical abstracts into a structured **PICO** table (Population, Intervention, Comparator, Outcome).
 
 [![Task Board](https://img.shields.io/badge/Project_Board-GitHub-blue?style=for-the-badge&logo=github)](https://github.com/users/everettmakes/projects/6/views/1)
