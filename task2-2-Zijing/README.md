@@ -31,7 +31,7 @@ The experimental hypotheses are validated through the following visual reports:
 
 
 ### 3.1 Feature Importance
-![Feature Importance](./Figure_Top predictive Features Across PICO.png)
+![Feature Importance](./Figure_Top_predictive_Features_Across_PICO.png)
 
 The feature importance chart visualizes the words the model relies on most. Green bars represent positive indicators and red bars represent negative ones. This proves the model successfully captured the medical context, such as identifying "children" and "elderly" for Participants, and "surgery" for Interventions. This shows that the word frequency strategy effectively extracts highly recognizable medical terms.
 
