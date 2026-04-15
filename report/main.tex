@@ -1,5 +1,9 @@
 \documentclass{article}
+\makeatletter
+\def\@noticestring{}
+\makeatother
 \usepackage[preprint]{neurips_2024}
+\raggedbottom
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -10,10 +14,7 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
-
-
 \title{Exploring Methods for PICO Extraction from Medical Abstracts}
-
 \author{
     Joshua Everett \\
     \texttt{td22885@bristol.ac.uk}
@@ -22,28 +23,24 @@
     \texttt{email2} \\
     \And
     name3 \\
-    \texttt{email3} \\\
+    \texttt{email3} \\
     \And
     name4 \\
     \texttt{email4} \\
     \And
     name5 \\
-    \texttt{email5} \\
+    \texttt{email5}
 }
-
-
 \begin{document}
-
-
 \maketitle
-
+\vspace{-2em}
 
 \begin{abstract}
-  
+abstract stuff
 \end{abstract}
 
-
 \section{Introduction}
+This report explores methods for extracting Population, Intervention, Comparison and Outcome (PICO) results from medical abstracts. We extract the PICO results into a predefined schema from the text. An evaluation is carried out on how different strategies effect the quality of extracted data. Extraction of key data from medical text is an important field due to medical decisions contributing to life and death outcomes \cite{landolsi_information_2023}. Alongside recent research in LLMs and expert systems, the need for robust text analytics pipelines is growing \cite{wiest_llm-aix_2024}. This need is what motivates this project. Key challenges faced in this project are how to best prepare text for extraction, what methods to use, and finally how to evaluate these methods. Each of these is covered in detail, justifying our decisions at each stage. The available data used for this project is the ebm-nlp medical abstract corpus. It contains 4,993 abstracts, along with PIO labels. Although, for this task we will aim to extract Comparison results. Since training labels for Comparison are not provided, methods of evaluation will be explored later. 
 
 \section{Methods}
 \subsection{Baseline System}
@@ -54,12 +51,10 @@
 
 \subsection{Performance Metrics}
 \subsection{Experimental Setup}
+\subsection{LLM}
 
-\subsection{Axis 1: LLM, Axis 2: Zero Shot}
-\subsection{Axis 1: LLM, Axis 2: Few Shot}
 
-\subsection{Axis 1: Rule Based, Axis 2: Zero Shot}
-\subsection{Axis 1: Rule Based, Axis 2: Few Shot}
+\subsection{Rule Based Approach}
 
 \subsection{Results}
 \subsection{Analysis}
@@ -67,4 +62,6 @@
 
 \section{Conclusion}
 
+\bibliographystyle{plain} 
+\bibliography{references}
 \end{document}
