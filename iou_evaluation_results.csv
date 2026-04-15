@@ -1,0 +1,11 @@
+Text,Single_IoU_Pop,Multi_IoU_Pop,Single_IoU_Int,Multi_IoU_Int,Single_IoU_Out,Multi_IoU_Out
+Comparison of budesonide Turbuhaler with budesonide aqua in the treatment of seasonal allergic rhinitis .,0.0,0.26666666666666666,0.0,0.0,1.0,0.0
+Rhinocort Study Group .,0.0,0.0,0.0,0.0,0.0,0.0
+OBJECTIVE To compare the effect of budesonide Turbuhaler 400 microg/day with budesonide aqua 256 microg/day in the treatment of seasonal allergic rhinitis ( SAR ) .,0.0,0.0,0.0,0.0,1.0,1.0
+Secondarily to ascertain patients ' preferences for the two nasal devices and to assess quality of life .,1.0,0.0,1.0,0.0,0.0,0.0
+"DESIGN Randomized , multicentre , double-blind , double- dummy , parallel groups study .",1.0,0.0,1.0,1.0,1.0,1.0
+"SETTING Private practices and hospital clinics in Ontario , Quebec and Manitoba .",0.0,0.38461538461538464,1.0,1.0,1.0,1.0
+"POPULATION Two hundred and eighty-four out-patients with SAR , who were symptomatic during the ragweed season , volunteered for enrolment ( 243 randomized ) .",0.2413793103448276,0.1111111111111111,0.0,0.0,0.0,0.0
+RESULTS Mean daily nasal symptom scores were significantly reduced with treatment .,1.0,0.0,1.0,0.0,0.0,0.125
+There were no statistically significant changes from baseline for eye symptoms .,1.0,0.0,1.0,1.0,0.0,0.0
+Most patients ( more than 80 % ) achieved substantial control of their symptoms with budesonide .,0.0,0.0,0.0,0.0,0.0,0.0
