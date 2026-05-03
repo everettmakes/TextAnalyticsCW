@@ -40,7 +40,7 @@ Nine pipeline variants are evaluated end-to-end on the EBM-NLP 2.0 test set (184
 ## Repository Structure
 
 ```
-.
+ProjectCode
 ├── PrepareData.ipynb           # Parse raw EBM-NLP → .npz (spaCy embeddings)
 ├── Evaluation.ipynb            # Unified multi-metric evaluation notebook
 ├── README.md
