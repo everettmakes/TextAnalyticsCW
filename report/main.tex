@@ -1,8 +1,11 @@
 \documentclass{article}
+
 \makeatletter
 \def\@noticestring{}
 \makeatother
 \usepackage[preprint]{neurips_2024}
+\usepackage{graphicx}
+\usepackage{float}
 \raggedbottom
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -19,49 +22,186 @@
     Joshua Everett \\
     \texttt{td22885@bristol.ac.uk}
     \And
-    name2 \\
-    \texttt{email2} \\
+    Run Yan \\
+    \texttt{gu25162@bristol.ac.uk} \\
     \And
-    name3 \\
-    \texttt{email3} \\
+    Zijing Wei \\
+    \texttt{er25746@bristol.ac.uk} \\
     \And
-    name4 \\
-    \texttt{email4} \\
+    Yifeng Mao \\
+    \texttt{gi25217@bristol.ac.uk}
     \And
-    name5 \\
-    \texttt{email5}
+    Vaishnavi Chennakeshava \\
+    \texttt{mp25216@bristol.ac.uk} \\
 }
 \begin{document}
 \maketitle
 \vspace{-2em}
 
 \begin{abstract}
-abstract stuff
+This project investigates P/I/O extraction from clinical trial abstracts, aiming to convert unstructured clinical trial abstracts into structured tables containing Population, Intervention, and Outcome. The main challenge lies in the diverse expressions of P/I/O information, ambiguous field boundaries, and the possibility of different fields appearing together in the same sentence. To analyze the impact of different design choices on extraction quality, this project compares three aspects: different model paradigms, different task structures, and different prompt designs. Specifically, the experiments compared the effects of ML-based extraction versus LLM-based extraction, end-to-end extraction versus decomposed extraction, and zero-shot prompting versus dynamic few-shot prompting on P/I/O extraction performance. Experimental results show that decomposed ML performs best in overall extraction quality and table-level usability, indicating that screening candidate tokens before field judgment helps reduce interference from non-PICO tokens. In LLM-based extraction, 1-shot dynamic few-shot prompting shows a significant improvement over zero-shot prompting, but increasing the number of examples does not consistently improve results, indicating that example relevance is more critical than shot number. Overall, reliable P/I/O extraction requires not only improved field coverage but also accurate field boundaries, traceable content, and support for downstream table usability.
 \end{abstract}
 
 \section{Introduction}
-This report explores methods for extracting Population, Intervention, Comparison and Outcome (PICO) results from medical abstracts. We extract the PICO results into a predefined schema from the text. An evaluation is carried out on how different strategies effect the quality of extracted data. Extraction of key data from medical text is an important field due to medical decisions contributing to life and death outcomes \cite{landolsi_information_2023}. Alongside recent research in LLMs and expert systems, the need for robust text analytics pipelines is growing \cite{wiest_llm-aix_2024}. This need is what motivates this project. Key challenges faced in this project are how to best prepare text for extraction, what methods to use, and finally how to evaluate these methods. Each of these is covered in detail, justifying our decisions at each stage. The available data used for this project is the ebm-nlp medical abstract corpus. It contains 4,993 abstracts, along with PIO labels. Although, for this task we will aim to extract Comparison results. Since training labels for Comparison are not provided, methods of evaluation will be explored later. 
+This project focuses on structured information extraction from clinical trial abstracts, specifically extracting trial design-related information from clinical trial abstracts and converting unstructured biomedical text into structured tables. Clinical trial abstracts typically contain key information such as study participants, intervention methods, and outcome measures, but this information is often scattered throughout the abstract in natural language. Automated extraction of these fields can help biomedical researchers compare different studies more efficiently, support evidence synthesis, and reduce the burden of manual reading and organization of literature. Recent research has also indicated that information summarization and meta-analysis of randomized clinical trials are often time-consuming and error-prone. Therefore, exploring effective clinical information extraction methods is of practical significance \cite{kartchner_zero-shot_2023}.
+
+
+This project uses the EBM-NLP dataset as the experimental foundation. This dataset contains clinical trial abstracts and their PICO-related annotations, suitable for evaluating the model’s ability to extract structured trial information from unstructured trial descriptions. A complete PICO schema typically includes Population, Intervention, Comparator, and Outcome. However, in the original EBM-NLP annotation structure used in this project, the aggregated hierarchical labels that can be directly used for model training and evaluation mainly include three categories: participants, interventions, and outcomes, without a separate comparator annotation. Therefore, to ensure that the experimental scope is consistent with the verifiable P/I/O reference labels, this project limits the structured extraction task to Population, Intervention, and Outcome.
+
+
+The main challenge of P/I/O extraction lies in the diversity, overlap, and boundary uncertainty of field representations. Population, Intervention, and Outcome may appear in different linguistic forms or coexist in the same sentence or adjacent phrases, making it difficult for the model to stably determine field boundaries and extraction granularity \cite{zhang_span-based_2024}. Therefore, an effective extraction pipeline not only needs
+
+to identify P/I/O-related text but also reduce field obfuscation and strike a balance between precision, coverage, and downstream table availability.
+
+
+To address these requirements, this project designed and compared various information extraction methods. First, as an initial data exploration, the project used k-means and Hierarchical clustering (HAC) to cluster sentence embeddings to observe whether clinical trial abstract sentences would naturally form semantic groups related to P/I/O fields. Subsequently, the project used LinearSVC token-level extraction as the overall baseline and conducted experiments around three categories of comparisons: First, it compared ML-based extraction with LLM-based extraction to evaluate the differences in extraction performance between different models. Second, within the Machine Learning (ML) method, it compared end-to-end and decomposed pipelines to examine whether task splitting improved the balance between accurate extraction and information coverage. Finally, within the Large Language Model (LLM) method, it compared zero-shot and dynamic few-shot prompting to analyze whether similar examples could improve accuracy, field boundary control, and output consistency.
 
 \section{Methods}
-\subsection{Baseline System}
-\subsection{Axes of Experimentation}
-\subsection{Axes Improvements}
+
+\subsection{Data Preprocessing}
+All methods use the same EBM-NLP dataset, including clinical trial abstracts and token-level labels for Population, Intervention, and Outcome. Because the original hierarchical labels have different levels of subcategories, and this project primarily focuses on whether text fragments belong to the P/I/O field, these labels are simplified to a binary form for subsequent modeling or analysis. Specifically, 0 indicates that the token does not belong to the target field, and 1 indicates that the token belongs to the corresponding Population, Intervention, or Outcome field.
+
+
+Because clustering, ML, and LLM methods have different requirements for input formats, this project did not use the exact same preprocessing flow for all methods. Instead, based on unified raw data and label definitions, different data representations were constructed for different methods. Clustering is mainly used for unsupervised exploration, so NLTK is used to segment the original abstract into sentences, and the P/I/O labels corresponding to the tokens in the sentence are used to determine whether the sentence contains Population, Intervention, or Outcome information. Sentence embeddings are then used to represent the sentence semantics. For the ML method, each abstract is first split into tokens by spaces, and these tokens are aligned with their corresponding P/I/O binary labels, making each token a training sample. Then, token\_features() extracts lexical features and local contextual features for each token. Next, DictVectorizer converts these dictionary-style features into a numerical sparse feature matrix for training LinearSVC token-level classifiers. Since the LLM method is more suitable for directly receiving complete text, the token sequence is reassembled into complete abstract text and used as prompt input.
+
+\subsection{Preliminary Clustering Analysis}
+Before formally building the extraction pipeline, this project conducted preliminary clustering analysis to observe whether sentence embeddings could naturally reflect the semantic differences between Population, Intervention, and Outcome. The project selected 5000 sentence samples from the training set and used KMeans to divide the sentence vectors into three clusters to observe whether these clusters roughly corresponded to the P/I/O fields. Simultaneously, PCA was used for two-dimensional visualization of the sentence vectors, and HAC dendrograms were used to observe the hierarchical similarity relationships between sentences.
+
+
+The results, as shown in Table 1, indicate that the clustering did not form a clear P/I/O separation structure. The k-means silhouette score was only 0.0247, indicating weak boundaries between clusters. However, some trends were still observed: Cluster 1 had the highest Outcome proportion at 0.6053, and Cluster 2 had the highest Intervention proportion at 0.5536. Population, however, did not form a clearly independent cluster, with the highest proportion being only 0.2518.
+
+
+Preliminary explorations show that sentence embeddings can capture some semantic differences, but are insufficient to directly complete P/I/O extraction. This is because P/I/O information often appears mixed in clinical trial abstracts. Furthermore, the representation of populations is diverse, making it more difficult to naturally form independent categories through unsupervised clustering.
+
+\begin{table}[H]
+    \centering
+    \includegraphics[width=\linewidth]{images/table1.png}
+    \caption{Cluster composition summary}
+\end{table}
+
+\subsection{Baseline System: End-to-End Token-Level Machine Learning Extraction Method}
+This project uses end-to-end token-level ML extraction as its baseline system. This method has a relatively simple structure, strong interpretability, and does not rely on task splitting. Therefore, it can serve as a clear benchmark for evaluating whether subsequent decomposed ML pipelines and LLM-based methods can improve extraction performance, coverage, or downstream usability.
+
+
+In this baseline, P/I/O extraction is modelled as three independent token-level binary classification tasks. Based on the token-level features and binary P/I/O labels obtained from the preprocessing stage, three LinearSVC binary classifiers are trained separately for Population, Intervention, and Outcome. Each classifier predicts whether a given token belongs to the corresponding field. Since P/I/O tokens are significantly fewer than non-PICO tokens in the data, balanced class weights are used in the classifiers to mitigate the impact of class imbalance on training. After token-level prediction is completed, tokens that are consecutively predicted as 1 are merged into phrases as the final extraction result. In this way, the baseline transforms the token-level classification output into text fragments that are closer to structured tabular fields.
+
+\subsection{Design Axes}
+This project uses three design axes to compare different information extraction strategies in order to analyze the impact of model type, task structure and prompting strategy on P/I/O extraction performance.
+
+\subsubsection{Axis 1: ML-based Extraction vs LLM-based Extraction}
+The first design axis compares the impact of extraction model type on P/I/O extraction results, focusing on the difference between supervised ML models and LLM-based generative models. In this project, the
+
+ML method is based on the end-to-end LinearSVC token-level baseline described above, while the LLM method uses Llama 3.1 with a zero-shot prompt to generate the Population, Intervention, and Outcome fields in JSON format from the full clinical trial abstract. The core difference between the two methods lies in the following: the ML method identifies relevant tokens from the original text through token-level classification and merges consecutive positive tokens into field fragments. The LLM method, on the other hand, directly generates structured fields based on the complete abstract context.
+
+
+The key difference in performance between the two methods lies in their output constraints, context scope, and error types. The LinearSVC method’s output is confined to the original tokens, making it easier to trace predictions to specific text fragments and align evaluation with the original token-level annotations. This mechanism may benefit precision and output stability, especially when P/I/O information has clear lexical cues. However, this method relies heavily on local context and surface-level lexical features, making it difficult to fully utilize the semantic information of the complete abstract, potentially missing longer or poorly defined P/I/O expressions. Conversely, the Llama 3.1 method can generate fields within the complete abstract context, making it potentially more suitable for handling flexible or semantically dependent trial information, thus improving coverage and field completeness. However, because its output is generated text, even with temperature=0 and JSON format constraints, field confusion or unsupported content that doesn’t fully correspond to the original text may still occur.
+
+
+Therefore, this axis assumes that LLM-based extraction may improve coverage and field completeness, but introduces a higher risk of field obfuscation and unsupported extraction. ML-based extraction may be more reliable in terms of precision, traceability, and output stability, but has limited coverage of complex or long-span P/I/O expressions.
+
+\subsubsection{Axis 2: End-to-End ML vs Decomposed ML}
+The second design axis compares end-to-end ML and decomposed ML to analyze the impact of task structure on P/I/O extraction performance when using the same LinearSVC and token-level features. End-to-end ML directly performs field-level token prediction for Population, Intervention, and Outcome, making the process simpler, but each classifier needs to identify a small number of target tokens from the complete token space. In contrast, decomposed ML breaks down the extraction process into two steps that are closer to human annotation logic: first, it determines whether a token might carry any P/I/O information, and then it determines which field it belongs to.
+
+
+In decomposed ML, field extraction is broken down into two stages: candidate detection and field assignment. The first stage merges Population, Intervention, and Outcome labels into a single any-PICO label. Then, using token-level lexical and contextual features, along with the merged any-PICO label, a LinearSVC binary classifier is trained to identify candidate tokens that may contain target information. The second stage performs specific field judgments only on candidate tokens. This design avoids directly confronting a large number of obviously irrelevant non-PICO tokens for field classification, instead distinguishing Population, Intervention, and Outcome within a more concentrated candidate space. This is particularly important for EBM-NLP data because target field tokens are relatively sparse, and P/I/O information is often embedded in long clinical trial abstracts. If field prediction is performed directly in the complete token space, the model is susceptible to class imbalance and irrelevant context. Candidate detection can serve as a filtering mechanism to make subsequent field classification focus more on the
+
+parts that may actually contain trial information \cite{hu_towards_2023}.
+
+
+Therefore, this decomposed ML design may improve the precision of field classification in the second stage by filtering irrelevant tokens through candidate detection. However, it may also reduce coverage by missing real P/I/O tokens in the first stage.
+
+\subsubsection{Axis 3: Zero-shot LLM vs Dynamic Few-shot LLM}
+The third design axis compares two prompting strategies within the LLM pipeline: zero-shot prompting and dynamic few-shot prompting. The purpose of this axis is to analyse whether adding similar examples to the prompt can help the LLM perform field extraction more consistently.
+
+
+In zero-shot prompting, Llama 3.1 only accepts the task description and the complete abstract, without providing any examples. This setting can serve as a basic version of the LLM pipeline to observe whether the model can understand the P/I/O schema without example references. However, since the boundaries between different fields in clinical trial abstracts are not always clear, zero-shot output may suffer from unstable extraction granularity, overgeneralization of field content, or mixing of different P/I/O information. In contrast, dynamic few-shot prompting adopts the approach of RAG-style example retrieval, first retrieving semantically similar training samples for the current abstract, and then adding these examples and their P/I/O reference outputs to the prompt. Specifically, this method uses the all-MiniLM-L6-v2 sentence embedding model to represent the training set abstracts and the current test abstract as semantic vectors, and selects the most similar training samples as few-shot examples based on cosine similarity. The selected examples and their corresponding P/I/O reference outputs are added to the prompt as demonstrations for the current extraction task. This project further compares different shot counts, such as from 1-shot to 5-shot, to observe whether changes in the number of examples affect the extraction performance of Llama 3.1. A potential advantage of Dynamic Few-shot prompting is that semantically similar clinical trial abstracts often have similar report structures. Adding similar examples to the prompt provides the model with more specific field boundaries and output format references, thereby helping to improve the accuracy of P/I/O field extraction.
+
+
+However, dynamic few-shot prompting may also introduce risks. If the retrieved examples are not sufficiently similar to the current abstract, the model may be influenced by misleading examples. In addition, few-shot examples increase the prompt length and may introduce extra irrelevant information. Based on these advantages and risks, the hypothesis for this axis is that, compared with zero-shot prompting, dynamic few-shot prompting may improve the consistency of the LLM output format and help the model distinguish P/I/O fields more accurately. However, its effectiveness depends on the quality of example retrieval and the number of shots used. Irrelevant or excessive examples may introduce noise and reduce extraction stability.
 
 \section{Experimental Evaluation}
+\subsection{Evaluation Metrics}
+The evaluation goal of this project is not only to determine whether the model can recognize P/I/O fields, but also whether its output can form a usable and reliable structured table. Therefore, three types of metrics are used here.
 
-\subsection{Performance Metrics}
+
+First, the evaluation script calculates field-level token precision, recall, and F1 to evaluate the extraction quality of the Population, Intervention, and Outcome fields. Since EBM-NLP provides token-level reference labels, token-level overlap can directly measure the degree of overlap between the predicted text and the gold span. This paper mainly reports field-level F1 and Macro F1 in the main results, because F1 can simultaneously summarize precision and recall and facilitates concise comparisons between different methods. Macro F1 is defined as the average of the three field F1 values to summarize the overall performance. However, token F1 is sensitive to boundary differences; even if the model extracts semantically correct content, it may be penalized for extracting too many or too few modifiers. In addition, EBM-NLP labels are derived from crowdsourced aggregation, and there may be annotator disagreement at field boundaries; therefore, F1 should be understood as an approximate evaluation relative to the aggregated labels.
+
+
+Secondly, this paper calculates prediction coverage and precision when predicted. Coverage measures whether the model generates non-empty fields; precision when predicted measures the reliability of the model's output fields. The Avg Field Coverage and Avg Precision When Predicted reported in this paper are macro averages of the Int, Out, and Pop fields. This paper does not use ROUGE or BERTScore as the primary metrics because this task focuses on traceable structured field extraction, rather than generating text similarity.
+
+
+Finally, this paper uses downstream table usability metrics, including complete predicted PIO rate, complete relaxed-correct PIO rate, and mean PIO F1. Complete predicted PIO rate measures whether each abstract is filled into a complete P/I/O table; complete relaxed-correct PIO rate requires that the token F1 of all three fields reach 0.50 or higher. This threshold is a practical relaxed matching threshold, allowing slight boundary differences but still requiring substantial overlap between predictions and the gold span.
+
 \subsection{Experimental Setup}
-\subsection{LLM}
+All experiments were based on the same EBM-NLP dataset and used the same Population, Intervention, and Outcome fields. The original hierarchical labels were converted into binary token-level masks for constructing gold annotations. To avoid data leakage, the training split was used only for training the ML model, constructing clustering maps, and retrieving examples for the dynamic few-shot LLM; the test split was used only for final evaluation. Although different methods employed different input representations and extraction mechanisms, they were all ultimately converted into a unified prediction table, including doc\_id, abstract text, gold P/I/O fields, and predicted P/I/O fields, for comparison within the same evaluation script.
+
+\subsection{Main Results}
+Figure 1 shows significant differences in performance across the three fields for different methods. ml\_token\_decomposed achieves the highest Macro F1 score of 0.514, with F1 scores of 0.471, 0.556, and 0.515 for Intervention, Outcome, and Population, respectively, higher than ml\_token\_end\_to\_end’s 0.467. This indicates that task splitting of candidate detection + field assignment does indeed help alleviate the sparsity of P/I/O tokens and class imbalance, but the improvement is limited, suggesting that blurred boundaries and field overlap remain the main challenges.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{report/images/graph1.png}
+    \caption{Field-level Token F1 by Method}
+\end{figure}
+
+Among the LLM methods, llm\_dynamic\_1\_shot performs best, with a Macro F1 score of 0.502, close to that of decomposed ML. However, increasing the number of few shots does not bring a monotonic improvement: 2-shot scores are 0.481, 3-shot scores are 0.471, and 4-shot and 5-shot scores drop to 0.440 and 0.436, respectively. This suggests that similar examples are helpful, but too many examples may introduce noise. Clustering performed the weakest, with a Macro F1 score of only 0.353, indicating that unsupervised semantic clustering is insufficient to directly complete P/I/O extraction.
+
+\begin{table}[H]
+    \centering
+    \includegraphics[width=\linewidth]{report//images/table2.png}
+    \caption{Main Evaluation Summary}
+\end{table}
+
+Table 2 presents an overall comparison of field-level F1, coverage, precision when predicted, and
+
+downstream table usability. The results show that a high table fill rate does not necessarily indicate correct extraction results. Most LLM and ML methods achieve high field coverage, but their complete relaxed-correct P/I/O rate is significantly lower. This suggests that filling the table is far easier than correctly filling the table.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{report/images/graph2.png}
+    \caption{Downstream Table Usability}
+\end{figure}
+
+Figure 2 further shows the gap between table completion and usable table correctness. Although several methods can generate nearly complete P/I/O rows, only ml\_token\_decomposed achieves a relatively higher complete relaxed-correct P/I/O rate. This suggests that when the evaluation requires all three fields in the same abstract to be sufficiently correct, decomposed token-level modelling is more reliable.
 
 
-\subsection{Rule Based Approach}
+At the same time, the results also reflect a coverage-precision trade-off. LLM-based methods generally achieve higher precision when predicted; for example, llm\_zero\_shot reaches 0.724. However, its complete relaxed-correct P/I/O rate remains low. In contrast, ML-based methods achieve high coverage but lower precision, suggesting that they are more likely to extract excessive local fragments.
 
-\subsection{Results}
-\subsection{Analysis}
-\subsection{Strengths and Limitations}
+\subsection{Error Analysis}
+Error analysis reveals that the main difficulty lies not in completely missing P/I/O information, but in controlling field boundaries, field attribution, and output granularity. The following cases, from representative examples in the error analysis output, illustrate the specific manifestations of different types of errors.
+
+
+The first type of error is boundary error. P/I/O spans often include dosage, administration method, disease condition, time point, or multiple parallel indicators. The model can easily extract the correct region, but the boundaries are too wide. For example, in doc\_id 10390665, gold intervention includes drugs such as granisetron and perphenazine, but ml\_token\_decomposed also predicts procedural content such as induction, anaesthesia, and standard general anaesthetic technique, indicating that the model mixes therapeutic drugs and research procedures into the same field.
+
+
+The second type of error is an overly broad or fragmented outcome. For example, in doc\_id 10070173, the gold outcome includes indicators such as patients’ preferences, quality of life, mean daily nasal symptom scores, and adverse events. While ml\_token\_decomposed extracted some correct results, it also included background context such as seasonal allergic rhinitis, ragweed, and clinics. This indicates that token-level models are prone to over-extraction when outcome, disease context, and outcome interpretation co-occur densely.
+
+
+The third type of error is field confusion. The common clinical summary phrase “patients receiving X showed improvement in Y” simultaneously includes Population, Intervention, and Outcome, making it easy for the model to mix adjacent fields. Cross-field contamination results show that the average contamination rate of ml\_token\_end\_to\_end is approximately 0.009, ml\_token\_decomposed is approximately 0.005, and llm\_dynamic\_1\_shot is approximately 0.007. Although the proportion is not high, it can still affect the interpretation of the table in evidence synthesis.
+
+
+The fourth type of error is unsupported generation. ML methods predict from the original text tokens, so the unsupported-token rate is essentially 0 under lexical grounding checks. LLM methods, however, may generate semantically plausible content that is not entirely derived from the original text. According to the faithfulness/groundedness metric in the evaluation script, the average unsupported-token rate for llm\_dynamic\_3\_shot is approximately 0.094, and for llm\_dynamic\_4\_shot it is approximately 0.100, while both ML methods have a rate of 0. This metric should be understood as a lexical grounding check, not a complete semantic hallucination detector. This indicates that the coverage and readability advantages of LLM require the use of grounding checks.
+
+\subsection{Discussion and Recommendations}
+The experimental results support the three design axes of this paper. First, ML and LLM demonstrate different advantages: LLM has high coverage and natural output, suitable for quickly building initial tables, ML output comes from the original tokens, making it easier to audit and align gold annotations, thus making the grounding more reliable. Second, decomposed ML outperforms end-to-end ML. It performs better on both Macro F1 and complete relaxed-correct PIO rate, indicating that identifying candidate tokens before field classification is a reasonable task split. However, if the first stage misses real P/I/O tokens, the second stage cannot recover them, so it is still not a complete solution. Third, dynamic few-shot is generally better than zero-shot, but more shots are not necessarily better. One to two shots can provide useful examples; continuing to increase examples may introduce noise. Further comparisons of BM25, dense retrieval, and hybrid retrieval can determine whether better example selection is more effective than increasing the number of shots.
+
+
+From a practical deployment perspective, running LLM locally via Ollam reduces reliance on external APIs but requires more computing resources, LinearSVC is low-cost and easy to run in batches, but its semantic understanding capabilities are limited. Therefore, a more reasonable practical system should adopt a hybrid pipeline: first, use LLM to generate high-coverage candidate P/I/O fields; then, use token-level alignment or ML verifiers to check grounding; finally, have manual review of cases with low confidence or severe field confusion. Therefore, this experiment shows that downstream table correctness is more stringent than individual token F1 or table fill rate, and is closer to actual needs. Future systems should simultaneously optimize completeness, groundingness, field consistency, and manual reviewability.
 
 \section{Conclusion}
 
+This project investigated the task of extracting Population, Intervention, and Outcome information from clinical trial abstracts and converting it into structured P/I/O tables. The experiments show that the main challenge is not simply identifying relevant medical terms, but reliably determining field boundaries in complex abstracts, avoiding confusion between fields, and ensuring that the extracted results can be traced back to the original text. The preliminary clustering results also suggest that relying only on
+
+sentence-level semantic similarity is not sufficient for reliable extraction. Therefore, later methods require clearer supervised signals or stronger prompt constraints.
+
+
+The most important finding of this project is that pipeline design is just as important as model choice. In comparing ML-based extraction and LLM-based extraction, zero-shot LLM performed better in post-prediction precision, indicating that it is relatively cautious in generating fields. However, ML end-to-end extraction is more stable across a wider range of overall metrics. Therefore, simply changing the model type does not guarantee an improvement in overall extraction performance, the methodological structure also affects the final performance.
+
+
+Among all methods, Decomposed ML exhibits the most stable overall performance. This demonstrates that separating candidate detection and field assignment allows field classification to focus on more relevant candidate tokens. However, this task decomposition may also introduce the risk of error propagation. Therefore, the advantage of decomposed ML depends on whether candidate detection can retain a sufficient number of true target tokens. LLM methods demonstrate another advantage and limitation. Llama 3.1 can generate highly readable structured field outputs based on complete abstracts, and some metrics are improved compared to zero-shot after adding dynamic few-shot examples. However, experimental results also show that increasing the number of examples does not necessarily lead to a sustained performance improvement. The relevance and quality of retrieved examples are more critical than the shot number. Therefore, future LLM-based extraction should not simply increase the prompt length, but should focus on optimizing example selection and checking whether the generated fields can be traced back to the original text.
+
+
+Overall, this task still faces several open challenges. First, the boundaries of P/I/O fields are difficult to determine stably, especially since Intervention and Outcome often contain long phrases and contextual conditions. Second, Population, Intervention, and Outcome may appear in the same sentence, leading to field confusion. Third, the LLM method needs to address the issue of original text traceability in the generated content. Future work needs to further improve field boundary control, reduce field confusion, and achieve a better balance between coverage, precision, and downstream table usability.
 \bibliographystyle{plain} 
 \bibliography{references}
 \end{document}
